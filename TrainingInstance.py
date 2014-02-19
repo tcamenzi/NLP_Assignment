@@ -52,6 +52,12 @@ class TrainingInstance:
 				self.parentFirstOrderingNonLeaves.append(node)
 
 
+	def pushTotalError(self, W,L,Ws):
+		self.setActivations(W,L)
+		self.setPredictions(Ws)
+		error = self.totalError()
+		return error 
+
 	def setActivations(self, W, L):
 		for node in self.parentFirstOrderingLeaves: #set leaf activations first
 			colno = node.word_id
@@ -78,9 +84,54 @@ class TrainingInstance:
 			total += error
 		return total
 
+	def setSoftmaxErrors(self, Ws):
+		for node in self.parentFirstOrdering:
+			error_vector = self.softmaxError(node, Ws)
+			node.softmax_error = error_vector
+
+
+	def getGradWs(self):
+		GradWs = numpy.matlib.zeros((NUM_CLASSES, d))
+		for node in self.parentFirstOrdering:
+			y = node.y
+			t = node.t
+			a = node.activation 
+			temp = (y-t)*(a.T)
+			GradWs = GradWs + temp
+		return GradWs 
+
+	def setTotalErrors(self, W):
+		self.tree.parent_error = numpy.matlib.zeros((d,1))
+
+		for node in self.parentFirstOrderingNonLeaves:
+			node.total_error = node.parent_error+ node.softmax_error
+			lhs = W.T*node.total_error
+			b = node.left.activation
+			c = node.right.activation
+			bc = numpy.concatenate((b,c))
+			fbc = numpy.tanh(bc)
+			fbc2 = numpy.multiply(fbc, fbc)
+			rhs = 1 - fbc2
+			down_error = numpy.multiply(lhs, rhs)
+			down_error_left = down_error[:d,0]
+			down_error_right = down_error[d:,0]
+			node.left.parent_error = down_error_left
+			node.right.parent_error = down_error_right
+
+		for node in self.parentFirstOrderingLeaves:
+			node.total_error = node.parent_error + node.softmax_error
 
 
 
+
+	def softmaxError(self, node, Ws):
+		a = node.activation 
+		y = node.y
+		t = node.t 
+		rhs = (1-numpy.multiply(a,a))
+		lhs = Ws.T*(y-t)
+		result = numpy.multiply(lhs, rhs)
+		return result 
 
 	'''
 	Add all the nodes to self.parentFirstOrdering

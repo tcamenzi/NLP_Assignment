@@ -76,10 +76,43 @@ id1 = word_index["The"]
 id2 = word_index["Rock"]
 L[:,id1] = numpy.matrix('1;0')
 L[:,id2] = numpy.matrix('0;1')
-W = numpy.matrix('1 0 2 5; 3 0 4 6')
+W = numpy.matrix('1 0 2 5; 3 0 4 6').astype(float)
 te.setActivations(W,L)
-Ws = numpy.matrix('1 0; 1 0; 1 0; 0 2; 0 2')
+Ws = numpy.matrix('1 0; 1 0; 1 0; 0 2; 0 2').astype(float)
 te.setPredictions(Ws)
 error = te.totalError()
 print "error: ", error
 print te.tree.activation
+
+def gradCheckWs(te, W, L, Ws):
+	error = te.pushTotalError(W,L,Ws) #this sets y,t,a and gives the error
+	WsGrad = te.getGradWs()
+
+	eps = .0001
+	WsGradApprox = numpy.matlib.zeros((NUM_CLASSES, d))
+	Ws_up = Ws.copy()
+	Ws_down = Ws.copy()
+	
+	for i in range(NUM_CLASSES):
+		for j in range(d):
+			Ws_up[i,j]+=eps
+			Ws_down[i,j]-=eps
+
+			error1 = te.pushTotalError(W,L,Ws_up)
+			error2 = te.pushTotalError(W,L,Ws_down)
+			result = (error1-error2)/(2*eps)
+			WsGradApprox[i,j] = result
+
+			Ws_up[i,j]-=eps
+			Ws_down[i,j]+=eps
+
+	return WsGrad, WsGradApprox
+
+WsGrad, WsGradApprox = gradCheckWs(te, W,L,Ws)
+print "WsGrad: ", WsGrad
+print "WsGradApprox: ", WsGradApprox
+print "Difference: ", WsGrad - WsGradApprox
+
+te.setSoftmaxErrors(Ws)
+te.setTotalErrors(W)
+
