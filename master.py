@@ -68,7 +68,7 @@ initializeUnif(L,r)
 
 
 a = "(3 (2 The) (2 Rock))"
-te = TrainingInstance(a)
+te = training_instances[0]  # TrainingInstance(a)
 for node in te.parentFirstOrderingLeaves:
 	node.addID(word_index)
 
@@ -134,7 +134,7 @@ def gradCheckW(te, W, L, Ws):
 
 def gradCheckLSparse(te, W, L, Ws):
 	error = te.pushTotalError(W,L,Ws) #this sets y,t,a and gives the error
-	LGradSparse = te.getGradLSparse()
+	LGradSparse = te.getGradLSparse(Ws)
 
 	eps = .0001
 	LGradSparseApprox = {}
@@ -143,25 +143,25 @@ def gradCheckLSparse(te, W, L, Ws):
 	
 	for j in LGradSparse:
 		LGradSparseApprox[j] = numpy.matlib.zeros((d,1))
-		
+
 	for i in range(d):
 		for j in LGradSparse:
-			print "\nL_updown, i=%d, j=%d" % (i,j)
-			print L_up[i,j]
-			print L_down[i,j]
+			# print "\nL_updown, i=%d, j=%d" % (i,j)
+			# print L_up[i,j]
+			# print L_down[i,j]
 			L_up[i,j]+=eps
 			L_down[i,j]-=eps
-			print "after"
-			print L_up[i,j]
-			print L_down[i,j]
+			# print "after"
+			# print L_up[i,j]
+			# print L_down[i,j]
 
 
 			error1 = te.pushTotalError(W,L_up,Ws)
 			error2 = te.pushTotalError(W,L_down,Ws)
-			print "error1: ", error1
-			print "error2: ", error2
+			# print "error1: ", error1
+			# print "error2: ", error2
 			result = (error1-error2)/(2*eps)
-			print "result: ", result
+			# print "result: ", result
 			LGradSparseApprox[j][i,0] = result
 
 			L_up[i,j]-=eps
@@ -182,8 +182,9 @@ print "WGrad: ", WGrad
 print "WGradApprox: ", WGradApprox
 print "Difference: ", WGrad - WGradApprox
 
-gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
-for i in gradLSparse:
-	print "LGrad, LGradApprox for word %s:" % index_word[i]
-	print gradLSparse[i].T
-	print gradLSparseApprox[i].T
+# gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
+# for i in gradLSparse:
+# 	print "LGrad, LGradApprox for word %s:" % index_word[i]
+# 	print gradLSparse[i].T
+# 	print gradLSparseApprox[i].T
+# 	print (gradLSparse[i]-gradLSparseApprox[i]).T

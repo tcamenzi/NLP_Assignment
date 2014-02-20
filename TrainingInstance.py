@@ -101,11 +101,24 @@ class TrainingInstance:
 			GradW = GradW + temp
 		return GradW
 
-	def getGradLSparse(self):
+	def getGradLSparse(self, Ws):
 		index_grad = {}
 		for node in self.parentFirstOrderingLeaves: 
 			idx = node.word_id 
-			grad = node.total_error
+
+			# grad = node.parent_error
+			# grad += (Ws.T*(node.y-node.t))
+
+
+			#grad = node.total_error
+
+			# grad = node.softmax_error #CHANGE
+			# a = node.activation
+			# rhs = (1 - numpy.multiply(a,a))
+			# lhs = node.parent_error
+			# temp = numpy.multiply(lhs, rhs)
+			# grad = grad + temp
+
 			if not idx in index_grad:
 				index_grad[idx] = grad
 			else:
@@ -129,14 +142,29 @@ class TrainingInstance:
 
 		for node in self.parentFirstOrderingNonLeaves:
 			node.total_error = node.parent_error+ node.softmax_error
-			lhs = W.T*node.total_error
-			b = node.left.activation
+			# lhs = W.T*node.total_error 
+			# b = node.left.activation
+			# c = node.right.activation
+			# bc = numpy.concatenate((b,c))
+			# fbc = numpy.tanh(bc)
+			# fbc2 = numpy.multiply(fbc, fbc)
+			# rhs = 1 - fbc2
+			# down_error = numpy.multiply(lhs, rhs)
+			# print "lhs, rhs"
+			# print lhs
+			# print rhs
+
+			b= node.left.activation
 			c = node.right.activation
 			bc = numpy.concatenate((b,c))
-			fbc = numpy.tanh(bc)
-			fbc2 = numpy.multiply(fbc, fbc)
+			wbc = W*bc
+			fbc = numpy.tanh(wbc)
+			fbc2 = numpy.multiply(fbc,fbc)
 			rhs = 1 - fbc2
-			down_error = numpy.multiply(lhs, rhs)
+			mid = numpy.multiply(node.total_error, rhs)
+			down_error = W.T*mid
+
+			
 			down_error_left = down_error[:d,0]
 			down_error_right = down_error[d:,0]
 			node.left.parent_error = down_error_left
@@ -152,10 +180,13 @@ class TrainingInstance:
 		a = node.activation 
 		y = node.y
 		t = node.t 
-		rhs = (1-numpy.multiply(a,a))
-		lhs = Ws.T*(y-t)
-		result = numpy.multiply(lhs, rhs)
+		# rhs = (1-numpy.multiply(a,a))
+		# lhs = Ws.T*(y-t)
+		# result = numpy.multiply(lhs, rhs)
+		result = Ws.T*(y-t)
 		return result 
+
+
 
 	'''
 	Add all the nodes to self.parentFirstOrdering
