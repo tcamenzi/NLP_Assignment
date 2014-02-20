@@ -154,6 +154,16 @@ class TrainingInstance:
 			# print lhs
 			# print rhs
 
+			# b= node.left.activation
+			# c = node.right.activation
+			# bc = numpy.concatenate((b,c))
+			# wbc = W*bc
+			# fbc = numpy.tanh(wbc)
+			# fbc2 = numpy.multiply(fbc,fbc)
+			# rhs = 1 - fbc2
+			# mid = numpy.multiply(node.total_error, rhs)
+			# down_error = W.T*mid
+
 			b= node.left.activation
 			c = node.right.activation
 			bc = numpy.concatenate((b,c))
@@ -161,8 +171,11 @@ class TrainingInstance:
 			fbc = numpy.tanh(wbc)
 			fbc2 = numpy.multiply(fbc,fbc)
 			rhs = 1 - fbc2
-			mid = numpy.multiply(node.total_error, rhs)
-			down_error = W.T*mid
+			down_error = bc*(rhs.T)*node.total_error
+
+			# mid = numpy.multiply(node.total_error, rhs)
+			# down_error = W.T*mid
+
 
 			
 			down_error_left = down_error[:d,0]
