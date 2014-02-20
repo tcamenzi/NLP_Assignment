@@ -62,7 +62,7 @@ class TrainingInstance:
 		for node in self.parentFirstOrderingLeaves: #set leaf activations first
 			colno = node.word_id
 			col = L[:,colno].copy()
-			node.activation = col 
+			node.activation = numpy.tanh(col) #CHANGE 
 
 		for node in self.parentFirstOrderingNonLeaves[::-1]: #do children before parents
 			b = node.left.activation
@@ -88,6 +88,30 @@ class TrainingInstance:
 		for node in self.parentFirstOrdering:
 			error_vector = self.softmaxError(node, Ws)
 			node.softmax_error = error_vector
+
+
+	def getGradW(self):
+		GradW = numpy.matlib.zeros((d, 2*d))
+		for node in self.parentFirstOrderingNonLeaves: #only applies to nonleaves
+			lhs = node.total_error
+			b = node.left.activation
+			c = node.right.activation
+			bc = numpy.concatenate((b,c))
+			temp = lhs*bc.T
+			GradW = GradW + temp
+		return GradW
+
+	def getGradLSparse(self):
+		index_grad = {}
+		for node in self.parentFirstOrderingLeaves: 
+			idx = node.word_id 
+			grad = node.total_error
+			if not idx in index_grad:
+				index_grad[idx] = grad
+			else:
+				index_grad[idx]+=grad
+
+		return index_grad
 
 
 	def getGradWs(self):

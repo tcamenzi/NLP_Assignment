@@ -108,6 +108,67 @@ def gradCheckWs(te, W, L, Ws):
 
 	return WsGrad, WsGradApprox
 
+def gradCheckW(te, W, L, Ws):
+	error = te.pushTotalError(W,L,Ws) #this sets y,t,a and gives the error
+	WGrad = te.getGradW()
+
+	eps = .0001
+	WGradApprox = numpy.matlib.zeros((d, 2*d))
+	W_up = W.copy()
+	W_down = W.copy()
+	
+	for i in range(d):
+		for j in range(2*d):
+			W_up[i,j]+=eps
+			W_down[i,j]-=eps
+
+			error1 = te.pushTotalError(W_up,L,Ws)
+			error2 = te.pushTotalError(W_down,L,Ws)
+			result = (error1-error2)/(2*eps)
+			WGradApprox[i,j] = result
+
+			W_up[i,j]-=eps
+			W_down[i,j]+=eps
+
+	return WGrad, WGradApprox
+
+def gradCheckLSparse(te, W, L, Ws):
+	error = te.pushTotalError(W,L,Ws) #this sets y,t,a and gives the error
+	LGradSparse = te.getGradLSparse()
+
+	eps = .0001
+	LGradSparseApprox = {}
+	L_up = L.copy()
+	L_down = L.copy()
+	
+	for j in LGradSparse:
+		LGradSparseApprox[j] = numpy.matlib.zeros((d,1))
+		
+	for i in range(d):
+		for j in LGradSparse:
+			print "\nL_updown, i=%d, j=%d" % (i,j)
+			print L_up[i,j]
+			print L_down[i,j]
+			L_up[i,j]+=eps
+			L_down[i,j]-=eps
+			print "after"
+			print L_up[i,j]
+			print L_down[i,j]
+
+
+			error1 = te.pushTotalError(W,L_up,Ws)
+			error2 = te.pushTotalError(W,L_down,Ws)
+			print "error1: ", error1
+			print "error2: ", error2
+			result = (error1-error2)/(2*eps)
+			print "result: ", result
+			LGradSparseApprox[j][i,0] = result
+
+			L_up[i,j]-=eps
+			L_down[i,j]+=eps
+
+	return LGradSparse, LGradSparseApprox
+
 WsGrad, WsGradApprox = gradCheckWs(te, W,L,Ws)
 print "WsGrad: ", WsGrad
 print "WsGradApprox: ", WsGradApprox
@@ -116,3 +177,13 @@ print "Difference: ", WsGrad - WsGradApprox
 te.setSoftmaxErrors(Ws)
 te.setTotalErrors(W)
 
+WGrad, WGradApprox = gradCheckW(te, W,L,Ws)
+print "WGrad: ", WGrad
+print "WGradApprox: ", WGradApprox
+print "Difference: ", WGrad - WGradApprox
+
+gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
+for i in gradLSparse:
+	print "LGrad, LGradApprox for word %s:" % index_word[i]
+	print gradLSparse[i].T
+	print gradLSparseApprox[i].T
