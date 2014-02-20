@@ -49,7 +49,7 @@ import numpy
 import numpy.matlib
 import random
 from config import *
-r = .0001 #uniform random initialization
+r = 10 #uniform random initialization
 LANG_SIZE = len(word_index)
 
 W = numpy.matlib.zeros((d, 2*d)) #TODO: ADD BIAS
@@ -68,17 +68,17 @@ initializeUnif(L,r)
 
 
 a = "(3 (2 The) (2 Rock))"
-te = training_instances[0]  # TrainingInstance(a)
+te = training_instances[1]  # TrainingInstance(a)
 for node in te.parentFirstOrderingLeaves:
 	node.addID(word_index)
 
-id1 = word_index["The"]
-id2 = word_index["Rock"]
-L[:,id1] = numpy.matrix('1;0')
-L[:,id2] = numpy.matrix('0;1')
-W = numpy.matrix('1 0 2 5; 3 0 4 6').astype(float)
+# id1 = word_index["The"]
+# id2 = word_index["Rock"]
+# L[:,id1] = numpy.matrix('1;0')
+# L[:,id2] = numpy.matrix('0;1')
+# W = numpy.matrix('1 0 2 5; 3 0 4 6').astype(float)
 te.setActivations(W,L)
-Ws = numpy.matrix('1 0; 1 0; 1 0; 0 2; 0 2').astype(float)
+# Ws = numpy.matrix('1 0; 1 0; 1 0; 0 2; 0 2').astype(float)
 te.setPredictions(Ws)
 error = te.totalError()
 print "error: ", error

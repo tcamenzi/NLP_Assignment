@@ -93,7 +93,7 @@ class TrainingInstance:
 	def getGradW(self):
 		GradW = numpy.matlib.zeros((d, 2*d))
 		for node in self.parentFirstOrderingNonLeaves: #only applies to nonleaves
-			lhs = node.total_error
+			lhs = node.softmax_error + numpy.multiply(node.parent_error, 1 - numpy.multiply(node.activation, node.activation)) #CHANGE
 			b = node.left.activation
 			c = node.right.activation
 			bc = numpy.concatenate((b,c))
@@ -164,17 +164,21 @@ class TrainingInstance:
 			# mid = numpy.multiply(node.total_error, rhs)
 			# down_error = W.T*mid
 
-			b= node.left.activation
-			c = node.right.activation
-			bc = numpy.concatenate((b,c))
-			wbc = W*bc
-			fbc = numpy.tanh(wbc)
-			fbc2 = numpy.multiply(fbc,fbc)
-			rhs = 1 - fbc2
-			down_error = bc*(rhs.T)*node.total_error
+			# b= node.left.activation
+			# c = node.right.activation
+			# bc = numpy.concatenate((b,c))
+			# wbc = W*bc
+			# fbc = numpy.tanh(wbc)
+			# fbc2 = numpy.multiply(fbc,fbc)
+			# rhs = 1 - fbc2
+			# down_error = bc*(rhs.T)*node.total_error
 
 			# mid = numpy.multiply(node.total_error, rhs)
 			# down_error = W.T*mid
+
+			#down_error = W.T*(numpy.multiply(node.total_error, (1 - numpy.multiply(node.activation, node.activation))))
+			#down_error = W.T*node.total_error
+			down_error = W.T*node.softmax_error + W.T*(numpy.multiply(node.parent_error, (1-numpy.multiply(node.activation, node.activation))))
 
 
 			
@@ -193,10 +197,10 @@ class TrainingInstance:
 		a = node.activation 
 		y = node.y
 		t = node.t 
-		# rhs = (1-numpy.multiply(a,a))
-		# lhs = Ws.T*(y-t)
-		# result = numpy.multiply(lhs, rhs)
-		result = Ws.T*(y-t)
+		rhs = (1-numpy.multiply(a,a))
+		lhs = Ws.T*(y-t)
+		result = numpy.multiply(lhs, rhs)
+		#result = Ws.T*(y-t) #CHANGE
 		return result 
 
 
