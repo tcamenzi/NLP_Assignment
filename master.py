@@ -2,7 +2,7 @@ from TrainingInstance import *
 
 import sys
 
-USE_BABY = True
+USE_BABY = False
 if USE_BABY:
 	DATA_PATH = "../baby_trees/baby_"
 else:
@@ -159,6 +159,7 @@ def gradCheckLSparse(te, W, L, Ws):
 			L_up[i,j]+=eps
 			L_down[i,j]-=eps
 
+
 			error1 = te.pushTotalError(W,L_up,Ws)
 			error2 = te.pushTotalError(W,L_down,Ws)
 			result = (error1-error2)/(2*eps)
@@ -188,3 +189,56 @@ for i in gradLSparse:
 	print gradLSparse[i].T
 	print gradLSparseApprox[i].T
 	print (gradLSparse[i]-gradLSparseApprox[i]).T
+
+
+
+
+
+
+
+
+'''==================================================================================='''
+'''Everything below here is Stochastic Gradient Descent'''
+
+def updateLSparseGrad(L, gradLSparse, alpha):
+	for j in gradLSparse:
+		L[:,j]-= alpha * gradLSparse[j]
+
+
+initializeUnif(W,r)
+initializeUnif(Ws, r)
+initializeUnif(L,r)
+alpha = .01 #the learning rate
+
+
+errors_log = []
+itercount = 0
+max_iters = 500
+max_train_inst = len(training_instances)
+
+training_instances = training_instances[:max_train_inst]
+print "Training on a set of %d training instances " % len(training_instances)
+
+while itercount < max_iters:
+	itercount+=1
+	if itercount % 100 == 0:
+		print "itercount: ", itercount 
+		print "avg error: ", sum(errors_log)/float(len(errors_log))
+
+	inst = training_instances[random.randrange(len(training_instances))]
+	error = inst.pushTotalError(W,L,Ws)
+	inst.setSoftmaxErrors(Ws)
+	inst.setTotalErrors(W)
+
+	gradW = inst.getGradW()
+	gradLSparse = inst.getGradLSparse(Ws)
+	gradWs = inst.getGradWs()
+
+	errors_log.append(error)
+	W = W - alpha*gradW
+	Ws = Ws - alpha*gradWs
+	updateLSparseGrad(L, gradLSparse, alpha)
+
+
+
+

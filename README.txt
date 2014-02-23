@@ -42,3 +42,15 @@ Ws.T*(y-t) + sigParent
 Note about L:
 - L stores the direct activations of the words, ie we use the ones in L directly *without* doing tanh(L) first.
 
+
+When working the the training instances, make sure things get done in the following order:
+1) set activations a
+2) set predictions y 
+3) sum the errors (optional; requires y,t,a)
+4) get grad wrt Ws (optional; requires y,t,a)
+5) set softmax errors
+6) set total errors
+7) get grad wrt W (optional; requires all errors be set, Ws)
+8) get grad wrt L (optional; requires all errors be set, Ws)
+
+PushTotalError does steps 1,2,3 for you.
