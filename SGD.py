@@ -43,6 +43,7 @@ def fullError(test_inst, W, L, Ws):
 		if max(inst.tree.y)!=inst.tree.y[inst.tree.score]: #highest probability correction is at the correct index given by node.score, at the root
 			num_wrong +=1
 
+	print "full error: numwrong is %d, number of instances is %d" % (num_wrong, len(test_inst))
 	return num_wrong / float(len(test_inst))
 
 
@@ -150,7 +151,7 @@ def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
 	printErrors(final_errors)
 
 	print "DONE RUNNING SGD\n======================================"
-	return final_errors
+	return final_errors, W, Ws, L
 
 
 
