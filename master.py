@@ -1,67 +1,20 @@
 from TrainingInstance import *
 import config
-
 import sys
-
-
-if USE_BABY:
-	DATA_PATH = "../baby_trees/baby_"
-else:
-	DATA_PATH = "../trees/"
-
-TRAIN_FILE = DATA_PATH+'train.txt'
-DEV_FILE = DATA_PATH+'dev.txt'
-TEST_FILE = DATA_PATH+'test.txt'
-
-
-
-'''===================================================================='''
-'''Everything in this section is initializing train/test/dev instances'''
-
-def getInstances(filename):
-	instances = []
-	f = open(filename)
-	for line  in f.readlines():
-		instances.append(TrainingInstance(line))
-	return instances 
-
-print "reading train"
-training_instances = getInstances(TRAIN_FILE)
-print "reading dev"
-dev_instances = getInstances(DEV_FILE)
-print "reading test"
-test_instances = getInstances(TEST_FILE)
-print "done getting instances"
-
-all_instances = [training_instances, dev_instances, test_instances]
-allwords = set([])
-for instance_set in all_instances:
-	for instance in instance_set:
-		for word in instance.words:
-			allwords.add(word)
-
-print "There are %d words in the lexicon" % len(allwords)
-index_word = []
-for word in allwords:
-	index_word.append(word)
-word_index = {}
-for i in range(len(index_word)):
-	word_index[index_word[i]] = i
-
-print "done making indexes"
-
-for instance_set in all_instances:
-	for instance in instance_set:
-		for node in instance.parentFirstOrderingLeaves:
-			node.addID(word_index)
-
-'''==============================================================================='''
-'''Initializing the parameter matrices'''
+import DataInit
 import numpy
 import numpy.matlib
 import random
 
+
+
+#Create Train, Dev,Test instances from file
+results = DataInit.getInstances(config.max_train_inst, config.max_dev_inst, config.max_test_inst)
+training_instances, dev_instances, test_instances, word_index, index_word = results
 LANG_SIZE = len(word_index)
+
+
+#Initialize the parameter matrices
 
 W = numpy.matlib.zeros((config.d, 2*config.d)) #TODO: ADD BIAS
 Ws = numpy.matlib.zeros((config.NUM_CLASSES, d))
