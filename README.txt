@@ -29,7 +29,8 @@ Ws.T(y-t) XX (1-aXXa)
 where XX is element-wise multiplication.
 
 The gradient with respect to W is
-sigSoftmax + sigParent XX f'(x)
+[ sigSoftmax + sigParent XX f'(x) ]*[b;c].T   where b,c are the activations of the left, right children.
+summed over all non-leaf nodes.
 
 sigDown = W.T * sigSoftmax + W.T * (sigParent XX f'(x))
 Then the left half of sigDown becomes sigParent for the left child, and the right half of sigDown becomes sigParent for the right child.

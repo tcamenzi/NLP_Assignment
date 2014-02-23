@@ -52,6 +52,10 @@ class TrainingInstance:
 				self.parentFirstOrderingNonLeaves.append(node)
 
 
+	'''
+	After calling this method, the activations and predictions (a,y) will be correct.
+	It also returns the error on this training example.
+	'''
 	def pushTotalError(self, W,L,Ws):
 		self.setActivations(W,L)
 		self.setPredictions(Ws)
@@ -105,20 +109,6 @@ class TrainingInstance:
 		index_grad = {}
 		for node in self.parentFirstOrderingLeaves: 
 			idx = node.word_id 
-
-			# grad = node.parent_error
-			# grad += (Ws.T*(node.y-node.t))
-
-
-			#grad = node.total_error
-
-			# grad = node.softmax_error #CHANGE
-			# a = node.activation
-			# rhs = (1 - numpy.multiply(a,a))
-			# lhs = node.parent_error
-			# temp = numpy.multiply(lhs, rhs)
-			# grad = grad + temp
-
 			if not idx in index_grad:
 				index_grad[idx] = grad
 			else:
@@ -137,60 +127,16 @@ class TrainingInstance:
 			GradWs = GradWs + temp
 		return GradWs 
 
+
 	def setTotalErrors(self, W):
 		self.tree.parent_error = numpy.matlib.zeros((d,1))
 
 		for node in self.parentFirstOrderingNonLeaves:
-			node.total_error = node.parent_error+ node.softmax_error
-			# lhs = W.T*node.total_error 
-			# b = node.left.activation
-			# c = node.right.activation
-			# bc = numpy.concatenate((b,c))
-			# fbc = numpy.tanh(bc)
-			# fbc2 = numpy.multiply(fbc, fbc)
-			# rhs = 1 - fbc2
-			# down_error = numpy.multiply(lhs, rhs)
-			# print "lhs, rhs"
-			# print lhs
-			# print rhs
-
-			# b= node.left.activation
-			# c = node.right.activation
-			# bc = numpy.concatenate((b,c))
-			# wbc = W*bc
-			# fbc = numpy.tanh(wbc)
-			# fbc2 = numpy.multiply(fbc,fbc)
-			# rhs = 1 - fbc2
-			# mid = numpy.multiply(node.total_error, rhs)
-			# down_error = W.T*mid
-
-			# b= node.left.activation
-			# c = node.right.activation
-			# bc = numpy.concatenate((b,c))
-			# wbc = W*bc
-			# fbc = numpy.tanh(wbc)
-			# fbc2 = numpy.multiply(fbc,fbc)
-			# rhs = 1 - fbc2
-			# down_error = bc*(rhs.T)*node.total_error
-
-			# mid = numpy.multiply(node.total_error, rhs)
-			# down_error = W.T*mid
-
-			#down_error = W.T*(numpy.multiply(node.total_error, (1 - numpy.multiply(node.activation, node.activation))))
-			#down_error = W.T*node.total_error
 			down_error = W.T*node.softmax_error + W.T*(numpy.multiply(node.parent_error, (1-numpy.multiply(node.activation, node.activation))))
-
-
-			
 			down_error_left = down_error[:d,0]
 			down_error_right = down_error[d:,0]
 			node.left.parent_error = down_error_left
 			node.right.parent_error = down_error_right
-
-		for node in self.parentFirstOrderingLeaves:
-			node.total_error = node.parent_error + node.softmax_error
-
-
 
 
 	def softmaxError(self, node, Ws):
@@ -200,12 +146,13 @@ class TrainingInstance:
 		rhs = (1-numpy.multiply(a,a))
 		lhs = Ws.T*(y-t)
 		result = numpy.multiply(lhs, rhs)
-		#result = Ws.T*(y-t) #CHANGE
 		return result 
 
 
 
 	'''
+	Used only during object construction, to create list
+	to iterate over the nodes parent before children.
 	Add all the nodes to self.parentFirstOrdering
 	so the parent always comes before the children.
 	'''
@@ -219,7 +166,7 @@ class TrainingInstance:
 		
 
 	'''
-	Given a tree in string form, return the resulting tree.
+	Given a tree in string form, return the resulting tree. Used only during tree construction.
 	'''
 	def buildTree(self, instring):
 		curr = Node()
@@ -247,11 +194,13 @@ class TrainingInstance:
 		return curr
 
 	'''
+	Helper function for object construction.
+
 	Given a string of the form 
 	(number (paren_sequence_one)[space](parent_sequence_two))
 
 	return the index of the [space] in between the paren sequences.
-	fisrstspace gives the index right before the opening paren of 
+	firstspace gives the index right before the opening paren of 
 	paren_sequence_one.
 	'''
 	def getSplit(self, instring, firstspace):

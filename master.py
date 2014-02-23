@@ -2,10 +2,20 @@ from TrainingInstance import *
 
 import sys
 
-DATA_PATH = "../baby_trees/baby_"
+USE_BABY = True
+if USE_BABY:
+	DATA_PATH = "../baby_trees/baby_"
+else:
+	DATA_PATH = "../trees/"
+
 TRAIN_FILE = DATA_PATH+'train.txt'
 DEV_FILE = DATA_PATH+'dev.txt'
 TEST_FILE = DATA_PATH+'test.txt'
+
+
+
+'''===================================================================='''
+'''Everything below here is initializing train/test/dev instances'''
 
 def getInstances(filename):
 	instances = []
@@ -49,7 +59,7 @@ import numpy
 import numpy.matlib
 import random
 from config import *
-r = 10 #uniform random initialization
+r = .001 #uniform random initialization; should be small, ie .001 or so
 LANG_SIZE = len(word_index)
 
 W = numpy.matlib.zeros((d, 2*d)) #TODO: ADD BIAS
@@ -68,7 +78,7 @@ initializeUnif(L,r)
 
 
 a = "(3 (2 The) (2 Rock))"
-te = training_instances[1]  # TrainingInstance(a)
+te = training_instances[4]  # TrainingInstance(a)
 for node in te.parentFirstOrderingLeaves:
 	node.addID(word_index)
 
