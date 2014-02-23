@@ -59,7 +59,7 @@ import numpy
 import numpy.matlib
 import random
 from config import *
-r = .001 #uniform random initialization; should be small, ie .001 or so
+r = 10 #uniform random initialization; should be small, ie .001 or so
 LANG_SIZE = len(word_index)
 
 W = numpy.matlib.zeros((d, 2*d)) #TODO: ADD BIAS
@@ -156,22 +156,12 @@ def gradCheckLSparse(te, W, L, Ws):
 
 	for i in range(d):
 		for j in LGradSparse:
-			# print "\nL_updown, i=%d, j=%d" % (i,j)
-			# print L_up[i,j]
-			# print L_down[i,j]
 			L_up[i,j]+=eps
 			L_down[i,j]-=eps
-			# print "after"
-			# print L_up[i,j]
-			# print L_down[i,j]
-
 
 			error1 = te.pushTotalError(W,L_up,Ws)
 			error2 = te.pushTotalError(W,L_down,Ws)
-			# print "error1: ", error1
-			# print "error2: ", error2
 			result = (error1-error2)/(2*eps)
-			# print "result: ", result
 			LGradSparseApprox[j][i,0] = result
 
 			L_up[i,j]-=eps
@@ -192,9 +182,9 @@ print "WGrad: ", WGrad
 print "WGradApprox: ", WGradApprox
 print "Difference: ", WGrad - WGradApprox
 
-# gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
-# for i in gradLSparse:
-# 	print "LGrad, LGradApprox for word %s:" % index_word[i]
-# 	print gradLSparse[i].T
-# 	print gradLSparseApprox[i].T
-# 	print (gradLSparse[i]-gradLSparseApprox[i]).T
+gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
+for i in gradLSparse:
+	print "LGrad, LGradApprox for word %s:" % index_word[i]
+	print gradLSparse[i].T
+	print gradLSparseApprox[i].T
+	print (gradLSparse[i]-gradLSparseApprox[i]).T

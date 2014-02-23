@@ -66,7 +66,7 @@ class TrainingInstance:
 		for node in self.parentFirstOrderingLeaves: #set leaf activations first
 			colno = node.word_id
 			col = L[:,colno].copy()
-			node.activation = numpy.tanh(col) #CHANGE 
+			node.activation = col
 
 		for node in self.parentFirstOrderingNonLeaves[::-1]: #do children before parents
 			b = node.left.activation
@@ -109,6 +109,12 @@ class TrainingInstance:
 		index_grad = {}
 		for node in self.parentFirstOrderingLeaves: 
 			idx = node.word_id 
+			y = node.y
+			t = node.t
+			sigParent = node.parent_error
+
+			grad = Ws.T*(y-t) + sigParent 
+
 			if not idx in index_grad:
 				index_grad[idx] = grad
 			else:

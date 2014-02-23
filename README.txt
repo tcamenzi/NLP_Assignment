@@ -36,6 +36,9 @@ sigDown = W.T * sigSoftmax + W.T * (sigParent XX f'(x))
 Then the left half of sigDown becomes sigParent for the left child, and the right half of sigDown becomes sigParent for the right child.
 Note sigParent = 0 for the root.
 
+gradL:
+Ws.T*(y-t) + sigParent
 
-
+Note about L:
+- L stores the direct activations of the words, ie we use the ones in L directly *without* doing tanh(L) first.
 
