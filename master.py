@@ -14,5 +14,5 @@ results = DataInit.getInstances(config.max_train_inst, config.max_dev_inst, conf
 training_instances, dev_instances, test_instances, word_index, index_word = results
 LANG_SIZE = len(word_index)
 
-errors = SGD.runSGD(training_instances, dev_instances, LANG_SIZE)
+errors, W, Ws, L = SGD.runSGD(training_instances, dev_instances, LANG_SIZE)
 print "returned errors: ", errors

@@ -28,11 +28,38 @@ def log(*args):
 		print " ".join(str(item) for item in args)
 
 
+def pos_neg(target, predProb):
+	if target==2: #neutral
+		d_total = 0
+		d_num_wrong = 0
+	else:
+		prediction = predProb.argmax()
+
+		d_total = 1
+		if target < 2 and prediction < 2:
+			d_num_wrong = 0
+		elif target > 2 and prediction > 2:
+			d_num_wrong = 0
+		else:
+			d_num_wrong = 1
+
+	return d_num_wrong, d_total
+
+	
+def fine_grained(target, predProb):
+	d_total = 1 
+	if predProb.argmax() == target:
+		d_num_wrong = 0
+	else:
+		d_num_wrong = 1
+	return d_num_wrong, d_total
+
 '''
 This just looks at the test error at the root (ie full sentences)
 '''
-def fullError(test_inst, W, L, Ws):
+def fullError(test_inst, W, L, Ws, comp_fun):
 	num_wrong = 0
+	total = 0
 
 	for inst in test_inst:
 		error = inst.pushTotalError(W,L,Ws) #we don't care about the error return value
@@ -40,31 +67,33 @@ def fullError(test_inst, W, L, Ws):
 				print "NaN or INf encountered, no bueno!!!"
 				assert False
 
-		if max(inst.tree.y)!=inst.tree.y[inst.tree.score]: #highest probability correction is at the correct index given by node.score, at the root
-			num_wrong +=1
+		d_num_wrong, d_total = comp_fun(inst.tree.score, inst.tree.y)
+		num_wrong += d_num_wrong
+		total += d_total
 
-	print "full error: numwrong is %d, number of instances is %d" % (num_wrong, len(test_inst))
-	return num_wrong / float(len(test_inst))
+	print "full error: numwrong is %d, number total is %d" % (num_wrong, total)
+	return num_wrong / float(total)
 
 
 '''
 Gets the test error over all nodes in the tree.
 '''
-def phraseError(test_inst, W,L,Ws):
+def phraseError(test_inst, W,L,Ws, comp_fun):
 	num_wrong = 0
-	num_total = 0
+	total = 0
 	for inst in test_inst:
 		error = inst.pushTotalError(W,L,Ws)
 		for node in inst.parentFirstOrderingLeaves:
-			num_total+=1
 			if max(node.y)==numpy.inf or max(node.y)!=max(node.y): #have a nan, BAD!!!
 				print "NaN or INf encountered, no bueno!!!"
 				assert False
 				
-			if max(node.y)!=node.y[node.score]:
-				num_wrong+=1
+			d_num_wrong, d_total = comp_fun(node.score, node.y)
+			num_wrong += d_num_wrong
+			total += d_total
 
-	return num_wrong / float(num_total)
+	print "phrase error: numwrong is %d, number total is %d" % (num_wrong, total)
+	return num_wrong / float(total)
 
 
 def getErrors(train_inst, test_inst, W, Ws,L):
@@ -72,18 +101,29 @@ def getErrors(train_inst, test_inst, W, Ws,L):
 	
 	errors = {}
 	for phase in [("Train", train_inst), ("Test", test_inst)]:
-		inst = phase[1]
-		errors[phase[0]] = {}
+		phase_name = phase[0]
+		phase_insts = phase[1]
+		errors[phase_name] = {}
+
 		for error_type in [("Phrase", phraseError), ("Full", fullError)]:
+			error_name = error_type[0]
 			error_fxn = error_type[1]
-			err = error_fxn(inst, W, L, Ws)
-			errors[phase[0]][error_type[0]] = err 
+			errors[phase_name][error_name] = {}
+
+			for classify_type in [("PosNeg", pos_neg), ("FineGrained", fine_grained)]:
+				classify_name = classify_type[0]
+				classify_fxn = classify_type[1]
+
+				err = error_fxn(phase_insts, W, L, Ws, classify_fxn)
+				errors[phase_name][error_name][classify_name] = err 
+
 	return errors
 
 def printErrors(errors):
-	for phase in ["Train", "Test"]:
-		for error_type in ["Phrase", "Full"]:
-			print phase, error_type, ": ", errors[phase][error_type]
+	for phase_name in ["Train", "Test"]:
+		for error_name in ["Phrase", "Full"]:
+			for classify_name in ["PosNeg", "FineGrained"]:
+				print phase_name, error_name, classify_name, ": ", 1 - errors[phase_name][error_name][classify_name] #accuracy levels
 
 
 
@@ -106,7 +146,7 @@ def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
 
 	if VERBOSE:
 		init_errors = getErrors(training_instances, test_instances, W, Ws, L)
-		log("Errors before training: ")
+		log("Accuracy before training: ")
 		printErrors(init_errors)
 
 
@@ -147,7 +187,7 @@ def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
 
 
 	final_errors = getErrors(training_instances, test_instances, W, Ws, L)
-	print "Errors after training: "
+	print "Accuracy after training: "
 	printErrors(final_errors)
 
 	print "DONE RUNNING SGD\n======================================"
