@@ -1,8 +1,9 @@
 from TrainingInstance import *
+import config
 
 import sys
 
-USE_BABY = False
+
 if USE_BABY:
 	DATA_PATH = "../baby_trees/baby_"
 else:
@@ -58,13 +59,12 @@ for instance_set in all_instances:
 import numpy
 import numpy.matlib
 import random
-from config import *
-r = .001 #uniform random initialization; should be small, ie .001 or so
+
 LANG_SIZE = len(word_index)
 
-W = numpy.matlib.zeros((d, 2*d)) #TODO: ADD BIAS
-Ws = numpy.matlib.zeros((NUM_CLASSES, d))
-L = numpy.matlib.zeros((d, LANG_SIZE))
+W = numpy.matlib.zeros((config.d, 2*config.d)) #TODO: ADD BIAS
+Ws = numpy.matlib.zeros((config.NUM_CLASSES, d))
+L = numpy.matlib.zeros((config.d, LANG_SIZE))
 
 def initializeUnif(matrix, r):
 	w,l  = matrix.shape
@@ -72,9 +72,9 @@ def initializeUnif(matrix, r):
 		for j in range(l):
 			matrix[i,j] = r*(random.random()*2-1) #recenter -1 to 1, then do -r to r 
 
-initializeUnif(W,r)
-initializeUnif(Ws, r)
-initializeUnif(L,r)
+initializeUnif(W,config.r)
+initializeUnif(Ws, config.r)
+initializeUnif(L,config.r)
 
 
 a = "(3 (2 The) (2 Rock))"
@@ -99,12 +99,12 @@ def gradCheckWs(te, W, L, Ws):
 	WsGrad = te.getGradWs()
 
 	eps = .0001
-	WsGradApprox = numpy.matlib.zeros((NUM_CLASSES, d))
+	WsGradApprox = numpy.matlib.zeros((config.NUM_CLASSES, d))
 	Ws_up = Ws.copy()
 	Ws_down = Ws.copy()
-	
-	for i in range(NUM_CLASSES):
-		for j in range(d):
+	 
+	for i in range(config.NUM_CLASSES):
+		for j in range(config.d):
 			Ws_up[i,j]+=eps
 			Ws_down[i,j]-=eps
 
@@ -123,11 +123,11 @@ def gradCheckW(te, W, L, Ws):
 	WGrad = te.getGradW()
 
 	eps = .0001
-	WGradApprox = numpy.matlib.zeros((d, 2*d))
+	WGradApprox = numpy.matlib.zeros((config.d, 2*config.d))
 	W_up = W.copy()
 	W_down = W.copy()
 	
-	for i in range(d):
+	for i in range(config.d):
 		for j in range(2*d):
 			W_up[i,j]+=eps
 			W_down[i,j]-=eps
@@ -152,9 +152,9 @@ def gradCheckLSparse(te, W, L, Ws):
 	L_down = L.copy()
 	
 	for j in LGradSparse:
-		LGradSparseApprox[j] = numpy.matlib.zeros((d,1))
+		LGradSparseApprox[j] = numpy.matlib.zeros((config.d,1))
 
-	for i in range(d):
+	for i in range(config.d):
 		for j in LGradSparse:
 			L_up[i,j]+=eps
 			L_down[i,j]-=eps
@@ -229,8 +229,9 @@ def test_error_phrase(test_inst, W,L,Ws):
 		error = inst.pushTotalError(W,L,Ws)
 		for node in inst.parentFirstOrderingLeaves:
 			num_total+=1
-			if max(node.y)!=inst.tree.y[node.score]:
+			if max(node.y)!=node.y[node.score]:
 				num_wrong+=1
+	print "did a total of %d comparisions " % num_total
 	return num_wrong / float(num_total)
 
 
@@ -243,19 +244,21 @@ alpha = .01 #the learning rate
 
 errors_log = []
 itercount = 0
-max_iters = 4000
-max_train_inst = len(training_instances)
-training_instances = training_instances[:max_train_inst]
-max_test_inst = 100
-test_instances = test_instances[:max_test_inst]
+
+training_instances = training_instances[:config.max_train_inst]
+
+test_instances = test_instances[:config.max_test_inst]
 
 
 print "Training on a set of %d training instances " % len(training_instances)
 print "Testing  on a set of %d testing  instances"  % len(test_instances)
 
-print "Initial error, before any training, is %f" % test_error_phrase(test_instances, W, L, Ws)
+train_error_init = test_error_phrase(training_instances, W, L, Ws)
+test_error_init = test_error_phrase(test_instances, W, L, Ws)
+print "Initial train error, before any training, is %f" % train_error_init
+print "Initial test error, before any training, is %f" %  test_error_init
 
-while itercount < max_iters:
+while itercount < config.max_iters:
 	itercount+=1
 	if itercount % 100 == 0:
 		print "itercount: ", itercount 
@@ -281,8 +284,8 @@ while itercount < max_iters:
 	Ws = Ws - alpha*gradWs
 	updateLSparseGrad(L, gradLSparse, alpha)
 
-
-print "Final error, after training, is %f" % test_error_phrase(test_instances, W, L, Ws)
+print "Final training set error, before training: %f\nafter training: %f" % (train_error_init, test_error_phrase(training_instances, W, L, Ws))
+print "Final error, before training:%f\nafter training: %f" % (test_error_init, test_error_phrase(test_instances, W, L, Ws))
 
 
 
