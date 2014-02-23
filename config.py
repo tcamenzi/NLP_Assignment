@@ -1,4 +1,4 @@
-TEST_METRIC = "full" #valid options: "phrase" or "full"
+#TEST_METRIC = "full" #valid options: "phrase" or "full"
 
 NUM_CLASSES = 5
 d = 25 #the dimension of the word vector. About 25-35 is good.

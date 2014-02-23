@@ -33,6 +33,7 @@ creates a 1:1 word:index mapping
 '''
 def getInstances(max_train, max_dev, max_test):
 
+	print "\n\n=============================================\nINITIALIZING DATA "
 	print "reading train"
 	training_instances = readInstances(TRAIN_FILE, max_train)
 	print "reading dev"
@@ -58,13 +59,12 @@ def getInstances(max_train, max_dev, max_test):
 	for i in range(len(index_word)):
 		word_index[index_word[i]] = i
 
-	print "done making indexes"
-
 	for instance_set in all_instances:
 		for instance in instance_set:
 			for node in instance.parentFirstOrderingLeaves:
 				node.addID(word_index)
 
+	print "DONE INITIALIZING DATA\n=====================================\n"
 	return training_instances, dev_instances, test_instances, word_index, index_word
 
 
