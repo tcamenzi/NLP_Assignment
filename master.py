@@ -59,7 +59,7 @@ import numpy
 import numpy.matlib
 import random
 from config import *
-r = 10 #uniform random initialization; should be small, ie .001 or so
+r = .001 #uniform random initialization; should be small, ie .001 or so
 LANG_SIZE = len(word_index)
 
 W = numpy.matlib.zeros((d, 2*d)) #TODO: ADD BIAS
@@ -170,25 +170,27 @@ def gradCheckLSparse(te, W, L, Ws):
 
 	return LGradSparse, LGradSparseApprox
 
-WsGrad, WsGradApprox = gradCheckWs(te, W,L,Ws)
-print "WsGrad: ", WsGrad
-print "WsGradApprox: ", WsGradApprox
-print "Difference: ", WsGrad - WsGradApprox
+PRINT_GRADCHECK = False 
+if PRINT_GRADCHECK:
+	WsGrad, WsGradApprox = gradCheckWs(te, W,L,Ws)
+	print "WsGrad: ", WsGrad
+	print "WsGradApprox: ", WsGradApprox
+	print "Difference: ", WsGrad - WsGradApprox
 
-te.setSoftmaxErrors(Ws)
-te.setTotalErrors(W)
+	te.setSoftmaxErrors(Ws)
+	te.setTotalErrors(W)
 
-WGrad, WGradApprox = gradCheckW(te, W,L,Ws)
-print "WGrad: ", WGrad
-print "WGradApprox: ", WGradApprox
-print "Difference: ", WGrad - WGradApprox
+	WGrad, WGradApprox = gradCheckW(te, W,L,Ws)
+	print "WGrad: ", WGrad
+	print "WGradApprox: ", WGradApprox
+	print "Difference: ", WGrad - WGradApprox
 
-gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
-for i in gradLSparse:
-	print "LGrad, LGradApprox for word %s:" % index_word[i]
-	print gradLSparse[i].T
-	print gradLSparseApprox[i].T
-	print (gradLSparse[i]-gradLSparseApprox[i]).T
+	gradLSparse, gradLSparseApprox = gradCheckLSparse(te, W, L, Ws)
+	for i in gradLSparse:
+		print "LGrad, LGradApprox for word %s:" % index_word[i]
+		print gradLSparse[i].T
+		print gradLSparseApprox[i].T
+		print (gradLSparse[i]-gradLSparseApprox[i]).T
 
 
 
@@ -204,6 +206,34 @@ def updateLSparseGrad(L, gradLSparse, alpha):
 	for j in gradLSparse:
 		L[:,j]-= alpha * gradLSparse[j]
 
+'''
+This just looks at the test error at the root (ie full sentences)
+'''
+def test_error_full(test_inst, W, L, Ws):
+	num_wrong = 0
+
+	for inst in test_inst:
+		error = inst.pushTotalError(W,L,Ws) #we don't care about the error return value
+		if max(inst.tree.y)!=inst.tree.y[inst.tree.score]: #highest probability correction is at the correct index given by node.score, at the root
+			num_wrong +=1
+
+	return num_wrong / float(len(test_inst))
+
+'''
+Gets the test error over all nodes in the tree.
+'''
+def test_error_phrase(test_inst, W,L,Ws):
+	num_wrong = 0
+	num_total = 0
+	for inst in test_inst:
+		error = inst.pushTotalError(W,L,Ws)
+		for node in inst.parentFirstOrderingLeaves:
+			num_total+=1
+			if max(node.y)!=inst.tree.y[node.score]:
+				num_wrong+=1
+	return num_wrong / float(num_total)
+
+
 
 initializeUnif(W,r)
 initializeUnif(Ws, r)
@@ -213,17 +243,29 @@ alpha = .01 #the learning rate
 
 errors_log = []
 itercount = 0
-max_iters = 500
+max_iters = 4000
 max_train_inst = len(training_instances)
-
 training_instances = training_instances[:max_train_inst]
+max_test_inst = 100
+test_instances = test_instances[:max_test_inst]
+
+
 print "Training on a set of %d training instances " % len(training_instances)
+print "Testing  on a set of %d testing  instances"  % len(test_instances)
+
+print "Initial error, before any training, is %f" % test_error_phrase(test_instances, W, L, Ws)
 
 while itercount < max_iters:
 	itercount+=1
 	if itercount % 100 == 0:
 		print "itercount: ", itercount 
-		print "avg error: ", sum(errors_log)/float(len(errors_log))
+		print "avg error past 100: ", sum(errors_log[-100:])/100.0
+		print "top left part of W, Ws, L: "
+		print "W: "
+		print W[1:4, 1:4]
+		print Ws[1:4, 1:4]
+		print L[1:4, 1:4]
+
 
 	inst = training_instances[random.randrange(len(training_instances))]
 	error = inst.pushTotalError(W,L,Ws)
@@ -238,6 +280,10 @@ while itercount < max_iters:
 	W = W - alpha*gradW
 	Ws = Ws - alpha*gradWs
 	updateLSparseGrad(L, gradLSparse, alpha)
+
+
+print "Final error, after training, is %f" % test_error_phrase(test_instances, W, L, Ws)
+
 
 
 

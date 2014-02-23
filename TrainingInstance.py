@@ -9,6 +9,7 @@ Output: Does softmax on each column of a matrix.
 A matrix with 1 column does a normal softmax; ie 
 softmax on [1;1;1] returns [.33;.33;.33]
 '''
+
 def softmax(matrix):
 	e = numpy.exp(matrix)
 	return e / sum(e)
@@ -77,6 +78,7 @@ class TrainingInstance:
 	def setPredictions(self, Ws):
 		for node in self.parentFirstOrdering:
 			a = node.activation
+			#print Ws*a
 			y = softmax(Ws*a)
 			node.y = y
 
@@ -84,7 +86,11 @@ class TrainingInstance:
 		total = 0
 		for node in self.parentFirstOrdering:
 			yk = node.y[node.score]
-			error = -1*math.log(yk)
+			if yk > .001:
+				error = -1*math.log(yk)
+			else:
+				#print "tiny yk: ", yk
+				error = 10 #corresponds to a tiny yk & very large error; also prevents domain error for log(0)
 			total += error
 		return total
 
