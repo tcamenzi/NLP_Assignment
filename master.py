@@ -16,7 +16,7 @@ TEST_FILE = DATA_PATH+'test.txt'
 
 
 '''===================================================================='''
-'''Everything below here is initializing train/test/dev instances'''
+'''Everything in this section is initializing train/test/dev instances'''
 
 def getInstances(filename):
 	instances = []
@@ -56,6 +56,7 @@ for instance_set in all_instances:
 			node.addID(word_index)
 
 '''==============================================================================='''
+'''Initializing the parameter matrices'''
 import numpy
 import numpy.matlib
 import random
@@ -77,6 +78,10 @@ initializeUnif(Ws, config.r)
 initializeUnif(L,config.r)
 
 
+'''=================================================================================='''
+'''This is all gradient checking code that was used when testing/debugging, but is not needed for training/testing.'''
+
+'''
 a = "(3 (2 The) (2 Rock))"
 te = training_instances[4]  # TrainingInstance(a)
 for node in te.parentFirstOrderingLeaves:
@@ -191,7 +196,7 @@ if PRINT_GRADCHECK:
 		print gradLSparse[i].T
 		print gradLSparseApprox[i].T
 		print (gradLSparse[i]-gradLSparseApprox[i]).T
-
+'''
 
 
 
@@ -214,6 +219,10 @@ def test_error_full(test_inst, W, L, Ws):
 
 	for inst in test_inst:
 		error = inst.pushTotalError(W,L,Ws) #we don't care about the error return value
+		if max(inst.tree.y)==numpy.inf or max(inst.tree.y)!=max(inst.tree.y): #have a nan, BAD!!!
+				print "NaN or INf encountered, no bueno!!!"
+				assert False
+
 		if max(inst.tree.y)!=inst.tree.y[inst.tree.score]: #highest probability correction is at the correct index given by node.score, at the root
 			num_wrong +=1
 
@@ -231,6 +240,7 @@ def test_error_phrase(test_inst, W,L,Ws):
 			num_total+=1
 			if max(node.y)==numpy.inf or max(node.y)!=max(node.y): #have a nan, BAD!!!
 				print "NaN or INf encountered, no bueno!!!"
+				assert False
 			if max(node.y)!=node.y[node.score]:
 				num_wrong+=1
 	print "did a total of %d comparisions " % num_total
@@ -261,8 +271,17 @@ test_instances = test_instances[:config.max_test_inst]
 print "Training on a set of %d training instances " % len(training_instances)
 print "Testing  on a set of %d testing  instances"  % len(test_instances)
 
-train_error_init = test_error_phrase(training_instances[:config.max_est_train_error], W, L, Ws)
-test_error_init = test_error_phrase(test_instances, W, L, Ws)
+
+#which test error metric to use-- phrase or full?
+if config.TEST_METRIC == "full":
+	test_error_metric = test_error_full
+elif config.TEST_METRIC == "phrase":
+	test_error_metric = test_error_phrase
+else:
+	assert False, 'invalid test metric' 
+
+train_error_init = test_error_metric(training_instances[:config.max_est_train_error], W, L, Ws)
+test_error_init = test_error_metric(test_instances, W, L, Ws)
 print "Initial train error, before any training, is %f" % train_error_init
 print "Initial test error, before any training, is %f" %  test_error_init
 
