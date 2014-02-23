@@ -229,6 +229,8 @@ def test_error_phrase(test_inst, W,L,Ws):
 		error = inst.pushTotalError(W,L,Ws)
 		for node in inst.parentFirstOrderingLeaves:
 			num_total+=1
+			if max(node.y)==numpy.inf or max(node.y)!=max(node.y): #have a nan, BAD!!!
+				print "NaN or INf encountered, no bueno!!!"
 			if max(node.y)!=node.y[node.score]:
 				num_wrong+=1
 	print "did a total of %d comparisions " % num_total
@@ -239,7 +241,6 @@ def test_error_phrase(test_inst, W,L,Ws):
 initializeUnif(W,r)
 initializeUnif(Ws, r)
 initializeUnif(L,r)
-alpha = .01 #the learning rate
 
 
 errors_log = []
@@ -247,13 +248,20 @@ itercount = 0
 
 training_instances = training_instances[:config.max_train_inst]
 
+'''
+While developing & finding parameters,
+use the dev set not the test set!!
+'''
+if config.DEV_MODE:
+	test_instances = dev_instances
+
 test_instances = test_instances[:config.max_test_inst]
 
 
 print "Training on a set of %d training instances " % len(training_instances)
 print "Testing  on a set of %d testing  instances"  % len(test_instances)
 
-train_error_init = test_error_phrase(training_instances, W, L, Ws)
+train_error_init = test_error_phrase(training_instances[:config.max_est_train_error], W, L, Ws)
 test_error_init = test_error_phrase(test_instances, W, L, Ws)
 print "Initial train error, before any training, is %f" % train_error_init
 print "Initial test error, before any training, is %f" %  test_error_init
@@ -263,11 +271,11 @@ while itercount < config.max_iters:
 	if itercount % 100 == 0:
 		print "itercount: ", itercount 
 		print "avg error past 100: ", sum(errors_log[-100:])/100.0
-		print "top left part of W, Ws, L: "
-		print "W: "
-		print W[1:4, 1:4]
-		print Ws[1:4, 1:4]
-		print L[1:4, 1:4]
+		# print "top left part of W, Ws, L: "
+		# print "W: "
+		# print W[1:4, 1:4]
+		# print Ws[1:4, 1:4]
+		# print L[1:4, 1:4]
 
 
 	inst = training_instances[random.randrange(len(training_instances))]
@@ -280,11 +288,11 @@ while itercount < config.max_iters:
 	gradWs = inst.getGradWs()
 
 	errors_log.append(error)
-	W = W - alpha*gradW
-	Ws = Ws - alpha*gradWs
-	updateLSparseGrad(L, gradLSparse, alpha)
+	W = W - config.alpha*gradW
+	Ws = Ws - config.alpha*gradWs
+	updateLSparseGrad(L, gradLSparse, config.alpha)
 
-print "Final training set error, before training: %f\nafter training: %f" % (train_error_init, test_error_phrase(training_instances, W, L, Ws))
+print "Final training set error, before training: %f\nafter training: %f" % (train_error_init, test_error_phrase(training_instances[:config.max_est_train_error], W, L, Ws))
 print "Final error, before training:%f\nafter training: %f" % (test_error_init, test_error_phrase(test_instances, W, L, Ws))
 
 
