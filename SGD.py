@@ -1,3 +1,7 @@
+'''
+This file implements Stochastic Gradient Descent for RNN training.
+'''
+
 import config
 import numpy
 import numpy.matlib

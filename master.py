@@ -7,6 +7,9 @@ import numpy
 import numpy.matlib
 import random
 
+#Author: Tom Camenzind
+#Citations: Data, technique from Richard Socher's Treebank Analysis dataset / paper.
+
 lambda_reg = config.lambda_reg
 lambda_L = config.lambda_L
 

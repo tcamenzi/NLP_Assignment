@@ -152,7 +152,7 @@ class TrainingInstance:
 
 	'''
 	Ws is the softmax matrix.
-	See readme for gradient derivations.
+	See readme for gradient derivations
 	'''
 	def getGradWs(self):
 		GradWs = numpy.matlib.zeros((config.NUM_CLASSES, config.d))
@@ -188,7 +188,6 @@ class TrainingInstance:
 		lhs = Ws.T*(y-t)
 		result = numpy.multiply(lhs, rhs)
 		return result 
-
 
 
 	'''
