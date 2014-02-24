@@ -32,6 +32,7 @@ def pos_neg(target, predProb):
 	if target==2: #neutral
 		d_total = 0
 		d_num_wrong = 0
+
 	else:
 		prediction = predProb.argmax()
 
@@ -110,7 +111,7 @@ def getErrors(train_inst, test_inst, W, Ws,L):
 			error_fxn = error_type[1]
 			errors[phase_name][error_name] = {}
 
-			for classify_type in [("PosNeg", pos_neg), ("FineGrained", fine_grained)]:
+			for classify_type in [ ("FineGrained", fine_grained)]: #("PosNeg", pos_neg),
 				classify_name = classify_type[0]
 				classify_fxn = classify_type[1]
 
@@ -121,8 +122,9 @@ def getErrors(train_inst, test_inst, W, Ws,L):
 
 def printErrors(errors):
 	for phase_name in ["Train", "Test"]:
+		print ""
 		for error_name in ["Phrase", "Full"]:
-			for classify_name in ["PosNeg", "FineGrained"]:
+			for classify_name in ["FineGrained"]: #"PosNeg", 
 				print phase_name, error_name, classify_name, ": ", 1 - errors[phase_name][error_name][classify_name] #accuracy levels
 
 
