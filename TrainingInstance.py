@@ -1,7 +1,7 @@
 import numpy
 import numpy.matlib
 import math
-from config import *
+import config
 
 '''
 Input: a matrix.
@@ -26,7 +26,7 @@ class Node:
 
 	def setScore(self, score):
 		self.score = score
-		self.t = numpy.matlib.zeros((NUM_CLASSES, 1))
+		self.t = numpy.matlib.zeros((config.NUM_CLASSES, 1))
 		self.t[score] = 1
 
 	def makeLeaf(self, word):
@@ -92,16 +92,33 @@ class TrainingInstance:
 				#print "tiny yk: ", yk
 				error = 10 #corresponds to a tiny yk & very large error; also prevents domain error for log(0)
 			total += error
+
+
+		#============for root_x_factor
+		node = self.tree
+		yk = node.y[node.score]
+		if yk > .001:
+			error = -1*math.log(yk)
+		else:
+			error = 10 #corresponds to a tiny yk & very large error; also prevents domain error for log(0)
+		total += error * (config.root_x_factor - 1)
+		#==============end root_x_factor
+
 		return total
 
 	def setSoftmaxErrors(self, Ws):
 		for node in self.parentFirstOrdering:
 			error_vector = self.softmaxError(node, Ws)
+
+			#========for the root maginutde thign
+			if node==self.tree: #root
+				error_vector *= (config.root_x_factor - 1)
+
 			node.softmax_error = error_vector
 
 
 	def getGradW(self):
-		GradW = numpy.matlib.zeros((d, 2*d+1))
+		GradW = numpy.matlib.zeros((config.d, 2*config.d+1))
 		for node in self.parentFirstOrderingNonLeaves: #only applies to nonleaves
 			lhs = node.softmax_error + numpy.multiply(node.parent_error, 1 - numpy.multiply(node.activation, node.activation)) #CHANGE
 			b = node.left.activation
@@ -109,6 +126,7 @@ class TrainingInstance:
 			bc = numpy.concatenate((b,c, numpy.matrix('1')))
 			temp = lhs*bc.T
 			GradW = GradW + temp
+
 		return GradW
 
 	def getGradLSparse(self, Ws):
@@ -130,23 +148,28 @@ class TrainingInstance:
 
 
 	def getGradWs(self):
-		GradWs = numpy.matlib.zeros((NUM_CLASSES, d))
+		GradWs = numpy.matlib.zeros((config.NUM_CLASSES, config.d))
 		for node in self.parentFirstOrdering:
 			y = node.y
 			t = node.t
 			a = node.activation 
 			temp = (y-t)*(a.T)
+
+			#===============for root thing
+			if node==self.tree:
+				temp *= (config.root_x_factor - 1)
+				
 			GradWs = GradWs + temp
 		return GradWs 
 
 
 	def setTotalErrors(self, W):
-		self.tree.parent_error = numpy.matlib.zeros((d,1))
+		self.tree.parent_error = numpy.matlib.zeros((config.d,1))
 
 		for node in self.parentFirstOrderingNonLeaves:
 			down_error = W.T*node.softmax_error + W.T*(numpy.multiply(node.parent_error, (1-numpy.multiply(node.activation, node.activation))))
-			down_error_left = down_error[:d,0]
-			down_error_right = down_error[d:2*d,0]
+			down_error_left = down_error[:config.d,0]
+			down_error_right = down_error[config.d:2*config.d,0]
 			node.left.parent_error = down_error_left
 			node.right.parent_error = down_error_right
 

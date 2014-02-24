@@ -24,7 +24,7 @@ LANG_SIZE = len(word_index)
 
 
 errors, W, Ws, L, errors_avg_log, errors_total_log = SGD.runSGD(training_instances, dev_instances, LANG_SIZE, lambda_reg, lambda_L)
-print "above was dev errors; below is test errors, d=%d " % config.d
+print "above was dev errors; below is test errors, d=%d, root_x_factor = %d " % (config.d, config.root_x_factor)
 test_errors = SGD.getErrors(training_instances, test_instances, W, Ws, L)
 SGD.printErrors(test_errors)
 
