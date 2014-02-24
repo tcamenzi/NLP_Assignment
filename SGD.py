@@ -2,6 +2,7 @@ import config
 import numpy
 import numpy.matlib
 import random
+import math
 from TrainingInstance import *
 
 VERBOSE = True
@@ -13,7 +14,7 @@ def initializeUnif(matrix, r):
 				matrix[i,j] = r*(random.random()*2-1) #recenter -1 to 1, then do -r to r 
 
 def paramInit(LANG_SIZE):
-	W = numpy.matlib.zeros((config.d, 2*config.d)) #TODO: ADD BIAS
+	W = numpy.matlib.zeros((config.d, 2*config.d+1)) #TODO: ADD BIAS
 	Ws = numpy.matlib.zeros((config.NUM_CLASSES, config.d))
 	L = numpy.matlib.zeros((config.d, LANG_SIZE))
 
@@ -177,17 +178,24 @@ def runSGD(training_instances, test_instances, LANG_SIZE, lambda_reg, lambda_L, 
 		errors_avg_log.append(error / float(num_nodes)) #record the average per-node error
 		errors_total_log.append(error)
 
-		W = W - config.alpha*gradW - lambda_reg * W
-		Ws = Ws - config.alpha*gradWs - lambda_reg * Ws
-		updateLSparseGrad(L, gradLSparse, config.alpha, lambda_L)
+		learn_rate = config.alpha #can also divide by log(num_iters) to decrease learning rate over time.
+
+		W = W - learn_rate*gradW - lambda_reg * W #gradually decrease the learning rate
+		Ws = Ws - learn_rate*gradWs - lambda_reg * Ws
+		updateLSparseGrad(L, gradLSparse, learn_rate, lambda_L)
+
+		# W = W - config.alpha*gradW - lambda_reg * W
+		# Ws = Ws - config.alpha*gradWs - lambda_reg * Ws
+		# updateLSparseGrad(L, gradLSparse, config.alpha, lambda_L)
 
 
 	final_errors = getErrors(training_instances, test_instances, W, Ws, L)
 	print "Accuracy after training: "
 	printErrors(final_errors)
 
+
 	print "DONE RUNNING SGD\n======================================"
-	return final_errors, W, Ws, L
+	return final_errors, W, Ws, L, errors_avg_log, errors_total_log
 
 
 

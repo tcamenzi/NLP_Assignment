@@ -72,13 +72,13 @@ class TrainingInstance:
 		for node in self.parentFirstOrderingNonLeaves[::-1]: #do children before parents
 			b = node.left.activation
 			c = node.right.activation #the b and c per the paper
-			bc = numpy.concatenate((b,c))
+			bc = numpy.concatenate((b,c, numpy.matrix('1')))
+			assert(bc.shape[0]==W.shape[1])
 			node.activation = numpy.tanh(W*bc)
 
 	def setPredictions(self, Ws):
 		for node in self.parentFirstOrdering:
 			a = node.activation
-			#print Ws*a
 			y = softmax(Ws*a)
 			node.y = y
 
@@ -101,12 +101,12 @@ class TrainingInstance:
 
 
 	def getGradW(self):
-		GradW = numpy.matlib.zeros((d, 2*d))
+		GradW = numpy.matlib.zeros((d, 2*d+1))
 		for node in self.parentFirstOrderingNonLeaves: #only applies to nonleaves
 			lhs = node.softmax_error + numpy.multiply(node.parent_error, 1 - numpy.multiply(node.activation, node.activation)) #CHANGE
 			b = node.left.activation
 			c = node.right.activation
-			bc = numpy.concatenate((b,c))
+			bc = numpy.concatenate((b,c, numpy.matrix('1')))
 			temp = lhs*bc.T
 			GradW = GradW + temp
 		return GradW
@@ -146,7 +146,7 @@ class TrainingInstance:
 		for node in self.parentFirstOrderingNonLeaves:
 			down_error = W.T*node.softmax_error + W.T*(numpy.multiply(node.parent_error, (1-numpy.multiply(node.activation, node.activation))))
 			down_error_left = down_error[:d,0]
-			down_error_right = down_error[d:,0]
+			down_error_right = down_error[d:2*d,0]
 			node.left.parent_error = down_error_left
 			node.right.parent_error = down_error_right
 

@@ -1,11 +1,11 @@
 #TEST_METRIC = "full" #valid options: "phrase" or "full"
 
 
-#lambda_reg = .01
-#lambda_L = .01
+lambda_reg = .0001
+lambda_L = .0001
 
 NUM_CLASSES = 5
-d = 85 #the dimension of the word vector. About 25-35 is good.
+d = 25 #the dimension of the word vector. About 25-35 is good.
 r = .001 #uniform random initialization; should be small, ie .001 or so
 USE_BABY = False #use a subset of the train/test set when debugging, so it fails faster.
 max_iters = 4000 #maximum number of iterations to use for Stochastic Gradient Descent, 4k has been good.
