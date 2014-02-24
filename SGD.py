@@ -130,22 +130,22 @@ def printErrors(errors):
 
 
 
-def updateLSparseGrad(L, gradLSparse, alpha):
+def updateLSparseGrad(L, gradLSparse, alpha, lambda_L):
 	for j in gradLSparse:
-		L[:,j]-= alpha * gradLSparse[j]
+		L[:,j]-= (alpha * gradLSparse[j] + lambda_L * L[:,j] )
 
 
 
 '''
 When developing, we will pass in dev_inst instead of test_inst.
 '''
-def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
+def runSGD(training_instances, test_instances, LANG_SIZE, lambda_reg, lambda_L, verbose=True):
 	VERBOSE = verbose 
 	W, Ws, L = paramInit(LANG_SIZE) 
 
 	print "\n======================================\nRUNNING SGD"
 	print "Training on %d training instances and %d testing instances" % (len(training_instances), len(test_instances))
-
+	print "Regularization is Reg: %f L_Reg: %f" % (lambda_reg, lambda_L)
 	if VERBOSE:
 		init_errors = getErrors(training_instances, test_instances, W, Ws, L)
 		log("Accuracy before training: ")
@@ -163,12 +163,6 @@ def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
 		if VERBOSE and (itercount % 100 == 0):
 			print "itercount: ", itercount 
 			print "avg, total error past 100: ", sum(errors_avg_log[-100:])/100.0, sum(errors_total_log[-100:])/100.0
-			# print "top left part of W, Ws, L: "
-			# print "W: "
-			# print W[1:4, 1:4]
-			# print Ws[1:4, 1:4]
-			# print L[1:4, 1:4]
-
 
 		inst = training_instances[random.randrange(len(training_instances))] #random training instance
 		error = inst.pushTotalError(W,L,Ws)
@@ -183,9 +177,9 @@ def runSGD(training_instances, test_instances, LANG_SIZE, verbose=True):
 		errors_avg_log.append(error / float(num_nodes)) #record the average per-node error
 		errors_total_log.append(error)
 
-		W = W - config.alpha*gradW
-		Ws = Ws - config.alpha*gradWs
-		updateLSparseGrad(L, gradLSparse, config.alpha)
+		W = W - config.alpha*gradW - lambda_reg * W
+		Ws = Ws - config.alpha*gradWs - lambda_reg * Ws
+		updateLSparseGrad(L, gradLSparse, config.alpha, lambda_L)
 
 
 	final_errors = getErrors(training_instances, test_instances, W, Ws, L)
