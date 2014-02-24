@@ -14,7 +14,6 @@ def softmax(matrix):
 	e = numpy.exp(matrix)
 	return e / sum(e)
 
-
 class Node:
 	def __init__(self):
 		self.parent = None
@@ -54,7 +53,7 @@ class TrainingInstance:
 
 
 	'''
-	After calling this method, the activations and predictions (a,y) will be correct.
+	After calling this method, the activations and predictions (using the notation form the paper: variables a,y) will be correct.
 	It also returns the error on this training example.
 	'''
 	def pushTotalError(self, W,L,Ws):
@@ -63,6 +62,9 @@ class TrainingInstance:
 		error = self.totalError()
 		return error 
 
+	'''
+	Set the a-values (the node activations)
+	'''
 	def setActivations(self, W, L):
 		for node in self.parentFirstOrderingLeaves: #set leaf activations first
 			colno = node.word_id
@@ -76,11 +78,19 @@ class TrainingInstance:
 			assert(bc.shape[0]==W.shape[1])
 			node.activation = numpy.tanh(W*bc)
 
+	'''
+	Set the y-values (the predicted probabilities)
+	'''
 	def setPredictions(self, Ws):
 		for node in self.parentFirstOrdering:
 			a = node.activation
 			y = softmax(Ws*a)
 			node.y = y
+
+	'''
+	Sum the total error over all nodes, 
+	measured by the KL-divergence.
+	'''
 
 	def totalError(self):
 		total = 0
@@ -89,46 +99,41 @@ class TrainingInstance:
 			if yk > .001:
 				error = -1*math.log(yk)
 			else:
-				#print "tiny yk: ", yk
 				error = 10 #corresponds to a tiny yk & very large error; also prevents domain error for log(0)
 			total += error
 
-
-		#============for root_x_factor
-		node = self.tree
-		yk = node.y[node.score]
-		if yk > .001:
-			error = -1*math.log(yk)
-		else:
-			error = 10 #corresponds to a tiny yk & very large error; also prevents domain error for log(0)
-		total += error * (config.root_x_factor - 1)
-		#==============end root_x_factor
-
 		return total
+
 
 	def setSoftmaxErrors(self, Ws):
 		for node in self.parentFirstOrdering:
 			error_vector = self.softmaxError(node, Ws)
-
-			#========for the root maginutde thign
-			if node==self.tree: #root
-				error_vector *= (config.root_x_factor - 1)
-
 			node.softmax_error = error_vector
 
-
+	'''
+	Return the gradient with respect to W;
+	W is the combiner matrix that takes 2 children activations
+	and combines them into one parent activation.
+	'''
 	def getGradW(self):
 		GradW = numpy.matlib.zeros((config.d, 2*config.d+1))
 		for node in self.parentFirstOrderingNonLeaves: #only applies to nonleaves
 			lhs = node.softmax_error + numpy.multiply(node.parent_error, 1 - numpy.multiply(node.activation, node.activation)) #CHANGE
 			b = node.left.activation
 			c = node.right.activation
-			bc = numpy.concatenate((b,c, numpy.matrix('1')))
+			bc = numpy.concatenate((b,c, numpy.matrix('1'))) #the '1' is the bias.
 			temp = lhs*bc.T
 			GradW = GradW + temp
 
 		return GradW
 
+	'''
+	Return format is a map with
+	key: the column of L
+	value: the gradient at that column
+
+	(This lets us do more efficient derivative updates.)
+	'''
 	def getGradLSparse(self, Ws):
 		index_grad = {}
 		for node in self.parentFirstOrderingLeaves: 
@@ -136,7 +141,6 @@ class TrainingInstance:
 			y = node.y
 			t = node.t
 			sigParent = node.parent_error
-
 			grad = Ws.T*(y-t) + sigParent 
 
 			if not idx in index_grad:
@@ -146,7 +150,10 @@ class TrainingInstance:
 
 		return index_grad
 
-
+	'''
+	Ws is the softmax matrix.
+	See readme for gradient derivations.
+	'''
 	def getGradWs(self):
 		GradWs = numpy.matlib.zeros((config.NUM_CLASSES, config.d))
 		for node in self.parentFirstOrdering:
@@ -154,15 +161,12 @@ class TrainingInstance:
 			t = node.t
 			a = node.activation 
 			temp = (y-t)*(a.T)
-
-			#===============for root thing
-			if node==self.tree:
-				temp *= (config.root_x_factor - 1)
-				
 			GradWs = GradWs + temp
 		return GradWs 
 
-
+	'''
+	Calculate the errors to be back-propagated form parent to child.
+	'''
 	def setTotalErrors(self, W):
 		self.tree.parent_error = numpy.matlib.zeros((config.d,1))
 
@@ -173,7 +177,9 @@ class TrainingInstance:
 			node.left.parent_error = down_error_left
 			node.right.parent_error = down_error_right
 
-
+	'''
+	See readme for derivation/formula.
+	'''
 	def softmaxError(self, node, Ws):
 		a = node.activation 
 		y = node.y

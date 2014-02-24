@@ -7,12 +7,20 @@ from TrainingInstance import *
 
 VERBOSE = True
 
+'''
+All parameters are initialized uniformly randomly
+in the range (-r, r)
+'''
 def initializeUnif(matrix, r):
 		w,l  = matrix.shape
 		for i in range(w):
 			for j in range(l):
 				matrix[i,j] = r*(random.random()*2-1) #recenter -1 to 1, then do -r to r 
 
+'''
+Initialize your parameters.
+LANG_SIZE is the number of words in your language.
+'''
 def paramInit(LANG_SIZE):
 	W = numpy.matlib.zeros((config.d, 2*config.d+1)) #TODO: ADD BIAS
 	Ws = numpy.matlib.zeros((config.NUM_CLASSES, config.d))
@@ -24,30 +32,24 @@ def paramInit(LANG_SIZE):
 
 	return W,Ws,L
 
+'''
+Utility function that makes it easy to toggle on/off print statements.
+It handles variables in a string, ie log("The value of a is ", a, " and that is cool")
+but not the %d %f style print statements.
+'''
 def log(*args):
 	if VERBOSE:
 		print " ".join(str(item) for item in args)
 
 
-def pos_neg(target, predProb):
-	if target==2: #neutral
-		d_total = 0
-		d_num_wrong = 0
-
-	else:
-		prediction = predProb.argmax()
-
-		d_total = 1
-		if target < 2 and prediction < 2:
-			d_num_wrong = 0
-		elif target > 2 and prediction > 2:
-			d_num_wrong = 0
-		else:
-			d_num_wrong = 1
-
-	return d_num_wrong, d_total
-
-	
+'''
+Returns whether/not your prediction is correct
+(specifically, by how much you should increment
+num_wrong and num_total due to this prediction.
+It is organized this way so that we can extend this 
+to positive/negative sentiment classification,
+and have a handy way of ignoring neutral statements.)
+'''
 def fine_grained(target, predProb):
 	d_total = 1 
 	if predProb.argmax() == target:
@@ -57,7 +59,8 @@ def fine_grained(target, predProb):
 	return d_num_wrong, d_total
 
 '''
-This just looks at the test error at the root (ie full sentences)
+This returns the classification error looking at just the root node
+(ie full sentence classification.)
 '''
 def fullError(test_inst, W, L, Ws, comp_fun):
 	num_wrong = 0
@@ -78,7 +81,8 @@ def fullError(test_inst, W, L, Ws, comp_fun):
 
 
 '''
-Gets the test error over all nodes in the tree.
+Gets the test error over all nodes in the trees passed in,
+ie classification error over all phrases.
 '''
 def phraseError(test_inst, W,L,Ws, comp_fun):
 	num_wrong = 0
@@ -97,7 +101,10 @@ def phraseError(test_inst, W,L,Ws, comp_fun):
 	print "phrase error: numwrong is %d, number total is %d" % (num_wrong, total)
 	return num_wrong / float(total)
 
-
+'''
+Return the errors for the train, test variables
+for both full sentences and for all sub-phrases.
+'''
 def getErrors(train_inst, test_inst, W, Ws,L):
 	train_inst = train_inst[:config.max_est_train_error]
 	
@@ -112,7 +119,7 @@ def getErrors(train_inst, test_inst, W, Ws,L):
 			error_fxn = error_type[1]
 			errors[phase_name][error_name] = {}
 
-			for classify_type in [ ("FineGrained", fine_grained)]: #("PosNeg", pos_neg),
+			for classify_type in [ ("FineGrained", fine_grained)]: #Could extend to ("PosNeg", pos_neg)
 				classify_name = classify_type[0]
 				classify_fxn = classify_type[1]
 
@@ -121,6 +128,9 @@ def getErrors(train_inst, test_inst, W, Ws,L):
 
 	return errors
 
+'''
+Print the errors in the format/map created by getErrors
+'''
 def printErrors(errors):
 	for phase_name in ["Train", "Test"]:
 		print ""
@@ -128,16 +138,17 @@ def printErrors(errors):
 			for classify_name in ["FineGrained"]: #"PosNeg", 
 				print phase_name, error_name, classify_name, ": ", 1 - errors[phase_name][error_name][classify_name] #accuracy levels
 
-
-
-
+'''
+We update L "sparsely" ie only columns that we have taken the derivative for;
+this is done for efficiency.
+'''
 def updateLSparseGrad(L, gradLSparse, alpha, lambda_L):
 	for j in gradLSparse:
 		L[:,j]-= (alpha * gradLSparse[j] + lambda_L * L[:,j] )
 
-
-
 '''
+Run Stochastic Gradient Descent on the training instances, and report the error
+on the testing instances.
 When developing, we will pass in dev_inst instead of test_inst.
 '''
 def runSGD(training_instances, test_instances, LANG_SIZE, lambda_reg, lambda_L, verbose=True):
@@ -180,13 +191,9 @@ def runSGD(training_instances, test_instances, LANG_SIZE, lambda_reg, lambda_L, 
 
 		learn_rate = config.alpha #can also divide by log(num_iters) to decrease learning rate over time.
 
-		W = W - learn_rate*gradW - lambda_reg * W #gradually decrease the learning rate
+		W = W - learn_rate*gradW - lambda_reg * W 
 		Ws = Ws - learn_rate*gradWs - lambda_reg * Ws
 		updateLSparseGrad(L, gradLSparse, learn_rate, lambda_L)
-
-		# W = W - config.alpha*gradW - lambda_reg * W
-		# Ws = Ws - config.alpha*gradWs - lambda_reg * Ws
-		# updateLSparseGrad(L, gradLSparse, config.alpha, lambda_L)
 
 
 	final_errors = getErrors(training_instances, test_instances, W, Ws, L)
@@ -196,7 +203,3 @@ def runSGD(training_instances, test_instances, LANG_SIZE, lambda_reg, lambda_L, 
 
 	print "DONE RUNNING SGD\n======================================"
 	return final_errors, W, Ws, L, errors_avg_log, errors_total_log
-
-
-
-
